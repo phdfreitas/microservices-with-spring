@@ -1,4 +1,4 @@
-package dev.phdfreitas.greetingservice;
+package dev.phdfreitas.greetingservice.model;
 
 public class Greeting {
 	
