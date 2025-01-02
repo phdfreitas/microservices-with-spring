@@ -1,6 +1,7 @@
 package dev.phdfreitas.bookservice.controller;
 
 import dev.phdfreitas.bookservice.model.Book;
+import dev.phdfreitas.bookservice.proxy.ExchangeProxy;
 import dev.phdfreitas.bookservice.repository.BookRepository;
 import dev.phdfreitas.bookservice.response.Exchange;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class BookController {
     @Autowired
     private Environment environment;
 
+    @Autowired
+    private ExchangeProxy exchangeProxy;
+
     @GetMapping(value = "/{id}/{currency}")
     public Book findBook(@PathVariable("id") Long id, @PathVariable("currency") String currency){
 
@@ -30,18 +34,10 @@ public class BookController {
         if (book == null)
             throw new RuntimeException("Book not found");
 
-        HashMap<String, String> params = new HashMap<>();
-        params.put("amount", book.get().getPrice().toString());
-        params.put("from", "USD");
-        params.put("to", currency);
-
-        var response = new RestTemplate().getForEntity("http://localhost:8000/exchange-service/{amount}/{from}/{to}",
-                Exchange.class, params);
-
-        var exchange = response.getBody();
+        var exchange = exchangeProxy.getExchange(book.get().getPrice(), "USD", currency);
 
         var port = environment.getProperty("local.server.port");
-        book.get().setEnviroment(port);
+        book.get().setEnviroment("FEIGN " + port);
         book.get().setCurrency(currency);
         book.get().setPrice(exchange.getConvertedValue());
 
